@@ -1,8 +1,8 @@
 # LinuxCMemoryTorjan
 
-这是一个用C实现的Linux下可实现进程隐藏的后门程序和用python实现的服务器端程序
+This is a backdoor program that implements process hiding under Linux and a server program implemented in python.
 
-服务器端程序具备简单的交互功能，可实现远程命令执行、文件上传、文件下载三个功能
+The server-side program has simple interactive functions, which can realize remote command execution, file upload, and file download.
 
 ## How to use
 ### Compile
